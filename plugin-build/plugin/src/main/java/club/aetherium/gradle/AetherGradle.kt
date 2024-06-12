@@ -5,6 +5,7 @@ import club.aetherium.gradle.extension.MinecraftExtension
 import club.aetherium.gradle.tasks.DownloadAndRemapJarTask
 import club.aetherium.gradle.tasks.DownloadMappingTask
 import club.aetherium.gradle.tasks.GenerateSourcesTask
+import club.aetherium.gradle.tasks.decomp.DecompileJarTask
 import club.aetherium.gradle.tasks.remap.RemapJarTask
 import club.aetherium.gradle.tasks.run.DownloadAssetsTask
 import club.aetherium.gradle.tasks.run.RunClientTask
@@ -22,6 +23,7 @@ import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.add
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.exclude
+import org.gradle.kotlin.dsl.getByName
 import java.io.File
 import java.net.URL
 
@@ -37,10 +39,11 @@ abstract class AetherGradle : Plugin<PluginAware> {
         val sourceSets = project.extensions.getByName("sourceSets") as SourceSetContainer
 
         val sets = arrayOf("minecraft", "platform")
-
+        var mainSourceset = sourceSets.getByName("main")
         sets.forEach { set ->
             sourceSets.maybeCreate(set)
             val sourceSet = sourceSets.getByName(set)
+            sourceSet.compileClasspath = mainSourceset.compileClasspath
             sourceSet.java.srcDirs("src/$set")
             var dirs = arrayOf(File(project.projectDir, "src/$set/java"))
             if (set == "minecraft") {
@@ -62,6 +65,11 @@ abstract class AetherGradle : Plugin<PluginAware> {
             project.tasks.register("downloadAndRemapJar", DownloadAndRemapJarTask::class.java) {
                 it.group = "AetherGradle"
                 it.dependsOn(project.tasks.named("downloadMapping"))
+            }
+        val decompileJar =
+            project.tasks.register("decompileJar", DecompileJarTask::class.java) {
+                it.group = "AetherGradle"
+                it.dependsOn(downloadAndRemapJarTask)
             }
         val generateSourcesTask = project.tasks.register("generateSources", GenerateSourcesTask::class.java) {
             it.group = "AetherGradle"
@@ -127,12 +135,13 @@ abstract class AetherGradle : Plugin<PluginAware> {
                 if (!it.name.contains("platform")) {
                     project.logger.info("Registering library ${it.name}")
                     project.dependencies.add("implementation", it.name)
-                    project.dependencies.add(
-                        "implementation",
-                        "com.mojang:minecraft-deobf:${extension.minecraftVersion.get()}"
-                    )
+
                 }
             }
+//            project.dependencies.add(
+//                "implementation",
+//                "com.mojang:minecraft-deobf:${extension.minecraftVersion.get()}"
+//            )
 //
 //            // RunMode
 //            val mode = extension.runMode.get()
