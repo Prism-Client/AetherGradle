@@ -16,6 +16,7 @@ dependencyResolutionManagement {
 
 plugins {
     `gradle-enterprise`
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.5.0"
 }
 
 gradleEnterprise {
@@ -29,5 +30,5 @@ gradleEnterprise {
 
 rootProject.name = "AetherGradle"
 
-include(":example")
 includeBuild("plugin-build")
+include("example", "example:1.8.9")

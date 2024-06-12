@@ -69,3 +69,20 @@ tasks.register("preMerge") {
 tasks.wrapper {
     distributionType = Wrapper.DistributionType.ALL
 }
+allprojects {
+    repositories.mavenLocal()
+    repositories.mavenCentral()
+    repositories.maven("https://maven.fabricmc.net/")
+    buildscript {
+        repositories.mavenLocal()
+        repositories.mavenCentral()
+        repositories.maven("https://maven.fabricmc.net/")
+    }
+}
+
+subprojects {
+    buildscript {
+        dependencies.classpath("club.aetherium:plugin")
+    }
+    plugins.apply("org.jetbrains.kotlin.jvm")
+}

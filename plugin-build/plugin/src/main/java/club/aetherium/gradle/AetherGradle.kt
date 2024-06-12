@@ -14,19 +14,44 @@ import club.aetherium.gradle.utils.manifest.data.VersionData
 import groovy.lang.Closure
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.PluginAware
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.add
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.exclude
+import java.io.File
 import java.net.URL
 
-abstract class AetherGradle : Plugin<Project> {
-    override fun apply(project: Project) {
-        val extension = project.extensions.create(
-            "minecraft",
-            MinecraftExtension::class.java, project
-        )
+abstract class AetherGradle : Plugin<PluginAware> {
+
+    override fun apply(target: PluginAware) {
+        if (target is Project) apply(target)
+    }
+
+    private fun apply(project: Project) {
+        val extension = project.extensions.create("minecraft", MinecraftExtension::class.java, project)
+
+        val sourceSets = project.extensions.getByName("sourceSets") as SourceSetContainer
+
+        val sets = arrayOf("minecraft", "platform")
+
+        sets.forEach { set ->
+            sourceSets.maybeCreate(set)
+            val sourceSet = sourceSets.getByName(set)
+            sourceSet.java.srcDirs("src/$set")
+            var dirs = arrayOf(File(project.projectDir, "src/$set/java"))
+            if (set == "minecraft") {
+                dirs += File(project.projectDir, "src/$set/resources")
+            }
+            dirs.forEach {
+                if (!it.exists()) {
+                    it.mkdirs()
+                }
+            }
+        }
+
 
         project.configurations.create("mappings")
 
@@ -119,7 +144,7 @@ abstract class AetherGradle : Plugin<Project> {
             // Extensions
             val extensions = extension.gameExtensions
 
-            extensions.forEach { applyExtension(it, project) }
+            extensions.get().forEach { applyExtension(it, project) }
         }
     }
 
