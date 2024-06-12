@@ -1,15 +1,17 @@
 package club.aetherium.gradle.utils
 
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.InputStream
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.tree.ClassNode
+import java.io.*
 import java.net.URI
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Optional
+import java.util.jar.JarFile
+import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
@@ -31,7 +33,7 @@ fun extractZipFile(zipFile: String, outputDirectory: String, exclusions: List<St
             val newFile = File(outputDirectory, zipEntry.name)
 
             if (!exclusions.any { zipEntry?.name!!.contains(it) }) {
-                if(zipEntry.isDirectory) {
+                if (zipEntry.isDirectory) {
                     newFile.mkdirs()
                 } else {
                     File(newFile.parent).mkdirs()
@@ -77,6 +79,7 @@ fun <T> Path.readZipInputStreamFor(path: String, throwIfMissing: Boolean = true,
     }
     return null as T
 }
+
 fun Path.forEachInZip(action: (String, InputStream) -> Unit) {
     Files.newInputStream(this).use { fileInputStream ->
         ZipInputStream(fileInputStream).use { zipInputStream ->
@@ -102,4 +105,52 @@ fun Path.openZipFileSystem(args: Map<String, *> = mapOf<String, Any>()): FileSys
         }
     }
     return FileSystems.newFileSystem(URI.create("jar:${toUri()}"), args, null)
+}
+
+fun fixSnowman(file: File) {
+    val jarFile = JarFile(file)
+
+    val entries = jarFile.entries()
+    val classPath = HashMap<String, ClassNode>()
+    val resourcePath = HashMap<String, ByteArray>()
+    while (entries.hasMoreElements()) {
+        val element = entries.nextElement()
+        if (element.name.endsWith(".class")) {
+            val reader = ClassReader(jarFile.getInputStream(element))
+            val classNode = ClassNode()
+            reader.accept(classNode, 0)
+            if (classNode.methods != null) {
+                classNode.methods.forEach {
+                    if (it.localVariables != null)
+                        it.localVariables.clear()
+                }
+            }
+            classPath[classNode.name] = classNode
+        } else {
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            val buffer = ByteArray(1024)
+            var length = 0
+            length = jarFile.getInputStream(element).read(buffer)
+            if (length > 0) {
+                byteArrayOutputStream.write(buffer, 0, jarFile.getInputStream(element).read(buffer))
+            }
+            resourcePath[element.name] = byteArrayOutputStream.toByteArray()
+        }
+    }
+
+    var outputStream = JarOutputStream(FileOutputStream(file.absolutePath))
+    classPath.forEach { (k, v) ->
+        val entry = ZipEntry("$k.class")
+        val writer = ClassWriter(ClassWriter.COMPUTE_MAXS)
+        v.accept(writer)
+        outputStream.putNextEntry(entry)
+        outputStream.write(writer.toByteArray())
+        outputStream.closeEntry()
+    }
+    resourcePath.forEach { (k, v) ->
+        outputStream.putNextEntry(ZipEntry(k))
+        outputStream.write(v)
+        outputStream.closeEntry()
+    }
+    outputStream.close()
 }

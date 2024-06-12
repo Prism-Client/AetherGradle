@@ -3,6 +3,7 @@ package club.aetherium.gradle
 import club.aetherium.gradle.api.GameExtension
 import club.aetherium.gradle.extension.MinecraftExtension
 import club.aetherium.gradle.tasks.DownloadAndRemapJarTask
+import club.aetherium.gradle.tasks.DownloadMappingTask
 import club.aetherium.gradle.tasks.GenerateSourcesTask
 import club.aetherium.gradle.tasks.remap.RemapJarTask
 import club.aetherium.gradle.tasks.run.DownloadAssetsTask
@@ -52,12 +53,15 @@ abstract class AetherGradle : Plugin<PluginAware> {
             }
         }
 
-
-        project.configurations.create("mappings")
+        val downloadMappingTask =
+            project.tasks.register("downloadMapping", DownloadMappingTask::class.java) {
+                it.group = "AetherGradle"
+            }
 
         val downloadAndRemapJarTask =
             project.tasks.register("downloadAndRemapJar", DownloadAndRemapJarTask::class.java) {
                 it.group = "AetherGradle"
+                it.dependsOn(project.tasks.named("downloadMapping"))
             }
         val generateSourcesTask = project.tasks.register("generateSources", GenerateSourcesTask::class.java) {
             it.group = "AetherGradle"
@@ -84,9 +88,11 @@ abstract class AetherGradle : Plugin<PluginAware> {
             it.targetNamespace.set("official")
 
             it.inputJar.set(jarTask.archiveFile.get().asFile)
-            it.outputJar.set(jarTask.archiveFile.get().asFile.parentFile.resolve(
-                jarTask.archiveFile.get().asFile.nameWithoutExtension + "-out.jar"
-            ))
+            it.outputJar.set(
+                jarTask.archiveFile.get().asFile.parentFile.resolve(
+                    jarTask.archiveFile.get().asFile.nameWithoutExtension + "-out.jar"
+                )
+            )
         }
 
         project.tasks.named("jar", Jar::class.java) {
@@ -127,24 +133,24 @@ abstract class AetherGradle : Plugin<PluginAware> {
                     )
                 }
             }
-
-            // RunMode
-            val mode = extension.runMode.get()
-
-            mode.additionalRepositories.forEach { dep ->
-                project.repositories.add(project.repositories.maven {
-                    it.url = project.uri(dep)
-                })
-            }
-
-            mode.additionalDependencies.forEach { dep ->
-                project.dependencies.add("implementation", dep)
-            }
-
-            // Extensions
-            val extensions = extension.gameExtensions
-
-            extensions.get().forEach { applyExtension(it, project) }
+//
+//            // RunMode
+//            val mode = extension.runMode.get()
+//
+//            mode.additionalRepositories.forEach { dep ->
+//                project.repositories.add(project.repositories.maven {
+//                    it.url = project.uri(dep)
+//                })
+//            }
+//
+//            mode.additionalDependencies.forEach { dep ->
+//                project.dependencies.add("implementation", dep)
+//            }
+//
+//            // Extensions
+//            val extensions = extension.gameExtensions
+//
+//            extensions.get().forEach { applyExtension(it, project) }
         }
     }
 

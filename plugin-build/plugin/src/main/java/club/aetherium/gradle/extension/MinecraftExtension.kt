@@ -14,6 +14,9 @@ abstract class MinecraftExtension @Inject constructor(project: Project) {
     private val objects = project.objects
 
     val minecraftVersion: Property<String> = objects.property(String::class.java)
+
+    val mappings: Property<String> = objects.property(String::class.java)
+
     val runMode: Property<RunMode> = objects.property(RunMode::class.java)
     val gameExtensions: ListProperty<GameExtension> = objects.listProperty(GameExtension::class.java)
 

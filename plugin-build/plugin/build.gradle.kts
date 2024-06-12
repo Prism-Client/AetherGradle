@@ -15,7 +15,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation(gradleApi())
     implementation(gradleKotlinDsl())
-
+    implementation("org.ow2.asm:asm-tree:9.7")
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
     implementation("org.vineflower:vineflower:1.10.1")

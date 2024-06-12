@@ -3,6 +3,7 @@ package club.aetherium.gradle.tasks
 import club.aetherium.gradle.extension.MinecraftExtension
 import club.aetherium.gradle.utils.Downloader
 import club.aetherium.gradle.utils.Mapper
+import club.aetherium.gradle.utils.fixSnowman
 import club.aetherium.gradle.utils.manifest.MinecraftManifest
 import club.aetherium.gradle.utils.manifest.MinecraftManifest.gson
 import club.aetherium.gradle.utils.manifest.data.VersionData
@@ -13,7 +14,7 @@ import net.fabricmc.tinyremapper.TinyUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import java.io.File
@@ -27,6 +28,10 @@ abstract class DownloadAndRemapJarTask : DefaultTask() {
     @OutputFile
     val remappedJar = project.projectDir.resolve("build")
         .resolve(".aether").resolve("client_${minecraftVersion.get()}_remapped.jar")
+
+    @Internal
+    val mappingJar = project.projectDir.resolve("build")
+        .resolve(".aether").resolve("${minecraftVersion.get()}_yarn.jar")
 
 
     private lateinit var manifest: VersionData
@@ -64,9 +69,7 @@ abstract class DownloadAndRemapJarTask : DefaultTask() {
                 "[AetherGradle] Client: [$characters$whitespaces] (${it})\r"
             )
         }
-        val mappings = Mapper.extractTinyMappingsFromJar(
-            project.configurations.getByName("mappings").resolve().toList()[0]
-        )
+        val mappings = Mapper.extractTinyMappingsFromJar(mappingJar)
 
         project.logger.lifecycle("[AetherGradle] Remapping client")
 
@@ -91,5 +94,7 @@ abstract class DownloadAndRemapJarTask : DefaultTask() {
         } finally {
             remapper.finish()
         }
+
+        fixSnowman(remappedJar)
     }
 }
