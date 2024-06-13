@@ -20,6 +20,10 @@ abstract class DecompileJarTask : DefaultTask() {
         .resolve(".aether").resolve("client_${minecraftVersion.get()}_decomp.jar")
     @TaskAction
     fun decompile() {
+        if(decompJar.exists()) {
+            project.logger.lifecycle("[AetherGradle] Wanting to re-decompile jar, delete it.")
+            return
+        }
         project.logger.lifecycle("[AetherGradle] Attempting to decompile jar")
         VineFlowerDecompiler.decompile(project, remappedJar, decompJar)
         project.logger.lifecycle("[AetherGradle] Decompiled jar")

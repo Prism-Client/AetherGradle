@@ -9,11 +9,11 @@ import club.aetherium.gradle.tasks.decomp.DecompileJarTask
 import club.aetherium.gradle.tasks.remap.RemapJarTask
 import club.aetherium.gradle.tasks.run.DownloadAssetsTask
 import club.aetherium.gradle.tasks.run.RunClientTask
+import club.aetherium.gradle.tasks.setup.ExtractJarTask
 import club.aetherium.gradle.utils.NativesTask
 import club.aetherium.gradle.utils.manifest.MinecraftManifest
 import club.aetherium.gradle.utils.manifest.MinecraftManifest.gson
 import club.aetherium.gradle.utils.manifest.data.VersionData
-import groovy.lang.Closure
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.PluginAware
@@ -23,7 +23,6 @@ import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.add
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.exclude
-import org.gradle.kotlin.dsl.getByName
 import java.io.File
 import java.net.URL
 
@@ -66,10 +65,15 @@ abstract class AetherGradle : Plugin<PluginAware> {
                 it.group = "AetherGradle"
                 it.dependsOn(project.tasks.named("downloadMapping"))
             }
-        val decompileJar =
+        val decompileJarTask =
             project.tasks.register("decompileJar", DecompileJarTask::class.java) {
                 it.group = "AetherGradle"
                 it.dependsOn(downloadAndRemapJarTask)
+            }
+        val setupMcpEnvTask =
+            project.tasks.register("setupMcpEnv", ExtractJarTask::class.java) {
+                it.group = "AetherGradle"
+                it.dependsOn(decompileJarTask)
             }
         val generateSourcesTask = project.tasks.register("generateSources", GenerateSourcesTask::class.java) {
             it.group = "AetherGradle"
