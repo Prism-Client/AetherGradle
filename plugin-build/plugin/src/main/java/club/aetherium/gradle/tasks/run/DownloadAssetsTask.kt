@@ -6,9 +6,6 @@ import club.aetherium.gradle.utils.manifest.MinecraftManifest
 import club.aetherium.gradle.utils.manifest.MinecraftManifest.gson
 import club.aetherium.gradle.utils.manifest.data.VersionData
 import com.google.gson.JsonObject
-import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
@@ -17,14 +14,12 @@ import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.CompletableFuture
 
 private const val RESOURCES_URL = "https://resources.download.minecraft.net/"
 
 abstract class DownloadAssetsTask : DefaultTask() {
     @OutputDirectory
-    val assetsDirectory = project.projectDir.resolve("build")
-        .resolve(".aether").resolve("assets")
+    val assetsDirectory = project.projectDir.resolve("run").resolve("assets")
     private val minecraftVersion: Property<String>
         get() = project.extensions.getByType(MinecraftExtension::class.java).minecraftVersion
 

@@ -54,6 +54,45 @@ fun extractZipFile(zipFile: String, outputDirectory: String, exclusions: List<St
     }
 }
 
+fun extractJarFile(zipFile: String, outputDirectory: String, javaFilesOnly: Boolean = true) {
+    val buffer = ByteArray(1024)
+    val folder = File(outputDirectory)
+
+    if (!folder.exists()) {
+        folder.mkdir()
+    }
+
+    ZipInputStream(FileInputStream(zipFile)).use { zis ->
+        var zipEntry = zis.nextEntry
+
+        while (zipEntry != null) {
+            val newFile = File(outputDirectory, zipEntry.name)
+            if(zipEntry.name.startsWith("META-INF") || zipEntry.name.startsWith("log4j2.xml")) {
+                zipEntry = zis.nextEntry
+                continue;
+            }
+            // Kappa :D
+            println("Extracting ${zipEntry.name} ${javaFilesOnly}")
+            if (zipEntry.name.startsWith("net") && javaFilesOnly || !zipEntry.name.startsWith("net") && !javaFilesOnly) {
+                if (zipEntry.isDirectory) {
+                    newFile.mkdirs()
+                } else {
+                    File(newFile.parent).mkdirs()
+                    FileOutputStream(newFile).use { fos ->
+                        var len: Int
+                        while (zis.read(buffer).also { len = it } > 0) {
+                            fos.write(buffer, 0, len)
+                        }
+                    }
+                }
+            }
+            zipEntry = zis.nextEntry
+        }
+        zis.closeEntry()
+    }
+}
+
+
 fun <T> Optional<T>.orElseOptional(invoke: () -> Optional<T>): Optional<T> {
     return if (isPresent) {
         this
